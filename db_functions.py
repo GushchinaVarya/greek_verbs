@@ -27,7 +27,7 @@ def generate_csv(table):
 
     df = df.reset_index(drop=True)
     df.index = df.index.values+1
-    filename = tablename+'_'+'_'.join(str(datetime.datetime.now()).split(' '))+'.csv'
+    filename = 'tmp_db/'+tablename+'_'+'_'.join(str(datetime.datetime.now()).split(' '))+'.csv'
     df.to_csv(filename)
 
     db.commit()
