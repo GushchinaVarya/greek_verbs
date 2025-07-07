@@ -1,5 +1,6 @@
 import sqlite3
 import pandas as pd
+import numpy as np
 from config import DB_NAME
 import datetime
 from telegram import InlineKeyboardButton
@@ -76,3 +77,24 @@ def write_to_table(table, question, answer, comment):
     db.commit()
     db.close()
     return deleted
+
+def get_question(table):
+    tablename = get_tablename(table)
+    db = sqlite3.connect(DB_NAME)
+    c = db.cursor()
+    c.execute(f"SELECT rowid from {tablename} ")
+    items = c.fetchall()
+    b = np.array(items)
+    b = b.reshape(b.shape[0])
+    rowid_rand = np.random.choice(b)
+    c.execute(f"SELECT question, answer, comment from {tablename} WHERE rowid == '{rowid_rand}' ")
+    items = c.fetchall()
+    el = items[0]
+    text = f"""
+переведите на греческий *{el[0]}*
+||ОТВЕТ: {el[1]}||
+||КОММЕНТАРИЙ: {el[2]}||
+    """
+    db.commit()
+    db.close()
+    return text

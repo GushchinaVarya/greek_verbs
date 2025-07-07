@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import datetime
+import numpy as np
 
 db = sqlite3.connect('greek_db_all.db')
 
@@ -49,6 +50,13 @@ c = db.cursor()
 #c.execute("DELETE FROM present WHERE rowid = 21")
 
 #c.execute("UPDATE present SET comment = 'глагол типа α' WHERE question = 'он живет' OR question = 'они живут' OR question = 'мы живем' OR question = 'вы живете' OR question = 'ты живешь'")
+
+c.execute(f"SELECT rowid from present ")
+items = c.fetchall()
+b = np.array(items)
+b = b.reshape(b.shape[0])
+rowid_rand = np.random.choice(b)
+
 
 #c.execute("SELECT rowid, question, answer from future WHERE rowid <> 5 ORDER BY rowid DESC")
 #c.execute("SELECT rowid, question, answer, comment from present WHERE rowid == 15")
