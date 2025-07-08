@@ -49,7 +49,84 @@ c = db.cursor()
 
 #c.execute("DELETE FROM present WHERE rowid = 21")
 
+#c.execute("""ALTER TABLE present
+#ADD hint TEXT DEFAULT 'используйте глагол αγοράζω' ;""")
+
+#c.execute("""ALTER TABLE past
+#ADD hint TEXT DEFAULT 'используйте глагол έρχομαι' ;""")
+
+#c.execute("""ALTER TABLE future
+#ADD hint TEXT DEFAULT 'используйте глагол αγοράζω' ;""")
+
 #c.execute("UPDATE present SET comment = 'глагол типа α' WHERE question = 'он живет' OR question = 'они живут' OR question = 'мы живем' OR question = 'вы живете' OR question = 'ты живешь'")
+
+#c.execute("""UPDATE present SET hint = 'используйте глагол διαβάζω αποφασίζω πηγαίνω μένω έρχομαι'
+#WHERE
+#question = 'она читает' """)
+
+c.execute("""UPDATE past SET hint = 'используйте глагол αγοράζω'
+WHERE
+question = 'я купил' """)
+
+c.execute("""UPDATE past SET hint = 'используйте глагол διαβάζω'
+WHERE
+question = 'он прочитал' """)
+
+c.execute("""UPDATE past SET question = 'ты положил'
+WHERE
+answer = 'εσύ έβαλες' """)
+
+c.execute("""UPDATE past SET question = 'вы положили'
+WHERE
+answer = 'εσείς βάλατε' """)
+
+c.execute("""UPDATE past SET hint = 'используйте глагол αποφασίζω'
+WHERE
+question = 'мы решили' """)
+
+c.execute("""UPDATE past SET hint = 'используйте глагол βάζω' 
+WHERE 
+question = 'я положил' OR
+question = 'он положил' OR
+question = 'она положила' OR
+question = 'они положили' OR
+question = 'вы положили' OR
+question = 'ты положил' OR
+question = 'мы положили' OR
+question = 'оно положило' """)
+
+c.execute("""UPDATE past SET hint = 'используйте глагол βγάζω' 
+WHERE 
+question = 'я удалил/достал' OR
+question = 'он удалил/достал' OR
+question = 'она удалила/достала' OR
+question = 'они удалили/достали' OR
+question = 'вы удалили/достали' OR
+question = 'ты удалил/достал' OR
+question = 'мы удалили/достали' OR
+question = 'оно удалило/достало' """)
+
+c.execute("""UPDATE past SET hint = 'используйте глагол δίνω' 
+WHERE 
+question = 'я дал' OR
+question = 'он дал' OR
+question = 'она дала' OR
+question = 'они дали' OR
+question = 'вы дали' OR
+question = 'ты дал' OR
+question = 'мы дали' OR
+question = 'оно дало' """)
+
+c.execute("""UPDATE present SET hint = 'используйте глагол πίνω' 
+WHERE 
+question = 'я пью' OR
+question = 'он пьет' OR
+question = 'она пьет' OR
+question = 'они пьют' OR
+question = 'вы пьете' OR
+question = 'ты пьешь' OR
+question = 'мы пьем' OR
+question = 'оно пьет' """)
 
 c.execute(f"SELECT rowid from present ")
 items = c.fetchall()
@@ -111,7 +188,6 @@ for el in items:
 df = df.reset_index(drop=True)
 print(df)
 print('_'.join(str(datetime.datetime.now()).split(' ')))
-df.to_csv('tmp.csv')
 db.commit()
 
 

@@ -44,6 +44,7 @@ TABLE = 1
 QUESTION = 2
 ANSWER = 3
 COMMENT = 4
+HINT = 5
 END = ConversationHandler.END
 
 
@@ -105,12 +106,12 @@ async def ask_for_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
     text = f"""Вы выбрали {context.user_data[TABLE]}\.
     
 Напишите строку для данной таблицы в формате
-*глагол по русски, глагол по гречески, комментарий*
+
+*глагол по русски, глагол по гречески, комментарий, подсказка*
+
 _Например:_
-__Например:__
-||Например:||
-~Например:~
-он покупает, αυτός αγοράζει, правильный глагол мужской род"""
+
+он покупает, αυτός αγοράζει, правильный глагол мужской род, используйте глагол αγοράζω"""
     await update.callback_query.answer()
     await update.callback_query.edit_message_text(text=text, parse_mode='MarkdownV2')
 
@@ -143,6 +144,7 @@ async def save_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     user_data[QUESTION] = update.message.text.split(',')[0].strip().lower()
     user_data[ANSWER] = update.message.text.split(',')[1].strip().lower()
     user_data[COMMENT] = update.message.text.split(',')[2].strip().lower()
+    user_data[HINT] = update.message.text.split(',')[3].strip().lower()
     buttons_add = [
         [
             InlineKeyboardButton(text="Добавить в базу", callback_data=str(YES_ADD)),
@@ -164,7 +166,8 @@ _Вы ввели_:
     
 ВОПРОС: {user_data[QUESTION]} 
 ОТВЕТ: {user_data[ANSWER]} 
-КОММЕНТАРИЙ: {user_data[COMMENT]}"""
+КОММЕНТАРИЙ: {user_data[COMMENT]}
+ПОДСКАЗКА: {user_data[HINT]}"""
 
     text_to_add, delete_option, = check_if_db_has_this(context.user_data[TABLE], user_data[QUESTION])
     if delete_option==0:
@@ -172,7 +175,7 @@ _Вы ввели_:
     if delete_option==1:
         keyboard = InlineKeyboardMarkup(buttons_add_and_del)
     logger.info(
-        f"User {update.message.from_user.first_name} selected table {context.user_data[TABLE]} and wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]}, delete option = {delete_option}")
+        f"User {update.message.from_user.first_name} selected table {context.user_data[TABLE]} and wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]}, {user_data[HINT]}, delete option = {delete_option}")
     await update.message.reply_text(text=text_to_add+text, parse_mode='MarkdownV2', reply_markup=keyboard)
     return CONFIRM
 
@@ -188,11 +191,11 @@ async def write_to_db(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str
         ],
     ]
     keyboard = InlineKeyboardMarkup(buttons)
-    deleted = write_to_table(user_data[TABLE], user_data[QUESTION], user_data[ANSWER], user_data[COMMENT])
+    deleted = write_to_table(user_data[TABLE], user_data[QUESTION], user_data[ANSWER], user_data[COMMENT], user_data[HINT])
     if deleted:
-        logger.info(f"User {update.callback_query.from_user.first_name} wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]} to table {context.user_data[TABLE]} DB , old item deleted")
+        logger.info(f"User {update.callback_query.from_user.first_name} wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]}, {user_data[HINT]} to table {context.user_data[TABLE]} DB , old item deleted")
     else:
-        logger.info(f"User {update.callback_query.from_user.first_name} wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]} to table {context.user_data[TABLE]} DB")
+        logger.info(f"User {update.callback_query.from_user.first_name} wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]}, {user_data[HINT]} to table {context.user_data[TABLE]} DB")
     await update.callback_query.edit_message_text(text="записано в базу", reply_markup=keyboard)
     return SELECTING_TABLE
 

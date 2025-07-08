@@ -20,11 +20,11 @@ def generate_csv(table):
     tablename = get_tablename(table)
     db = sqlite3.connect(DB_NAME)
     c = db.cursor()
-    df = pd.DataFrame({'question': [], 'answer': [], 'comment': []})
-    c.execute(f"SELECT rowid, question, answer, comment from {tablename} ORDER BY rowid")
+    df = pd.DataFrame({'question': [], 'answer': [], 'comment': [], 'hint': []})
+    c.execute(f"SELECT rowid, question, answer, comment, hint from {tablename} ORDER BY rowid")
     items = c.fetchall()
     for el in items:
-        df = pd.concat([df, pd.DataFrame({'question': [el[1]], 'answer': [el[2]], 'comment': [el[3]]})])
+        df = pd.concat([df, pd.DataFrame({'question': [el[1]], 'answer': [el[2]], 'comment': [el[3]], 'hint': [el[4]]})])
 
     df = df.reset_index(drop=True)
     df.index = df.index.values+1
@@ -40,7 +40,7 @@ def check_if_db_has_this(table, question):
     tablename = get_tablename(table)
     db = sqlite3.connect(DB_NAME)
     c = db.cursor()
-    c.execute(f"SELECT rowid, question, answer, comment from {tablename} WHERE question = ? ", (question,))
+    c.execute(f"SELECT rowid, question, answer, comment, hint from {tablename} WHERE question = ? ", (question,))
     items = c.fetchall()
     how_many = len(items)
     if how_many == 0:
@@ -55,24 +55,25 @@ def check_if_db_has_this(table, question):
 ВОПРОС: {el[1]}
 ОТВЕТ: {el[2]}
 КОММЕНТАРИЙ: {el[3]}
+ПОДСКАЗКА: {el[4]}
 
 """
     db.commit()
     db.close()
     return text, delete_option
 
-def write_to_table(table, question, answer, comment):
+def write_to_table(table, question, answer, comment, hint):
     tablename = get_tablename(table)
     db = sqlite3.connect(DB_NAME)
     c = db.cursor()
-    c.execute(f"SELECT rowid, question, answer, comment from {tablename} WHERE question == '{question}' ")
+    c.execute(f"SELECT rowid, question, answer, comment, hint from {tablename} WHERE question == '{question}' ")
     items = c.fetchall()
     if len(items) == 0:
         deleted = 0
     else:
         deleted = 1
         c.execute(f"DELETE FROM {tablename} WHERE question == '{question}' ")
-    c.execute(f"INSERT INTO {tablename} VALUES ('{question}', '{answer}', '{comment}')")
+    c.execute(f"INSERT INTO {tablename} VALUES ('{question}', '{answer}', '{comment}', '{hint}')")
 
     db.commit()
     db.close()
