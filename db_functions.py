@@ -111,7 +111,7 @@ def add_user(chat_id, name):
     c = db.cursor()
     c.execute(f"SELECT COUNT(chat_id) FROM users where chat_id = {chat_id}")
     items = c.fetchall()
-    if len(items)==0:
+    if items[0][0]==0:
         is_new = True
         c.execute(f"INSERT INTO users VALUES ({chat_id}, '{name}')")
     else:

@@ -141,12 +141,14 @@ c = db.cursor()
 #)""")
 
 #c.execute("INSERT INTO users VALUES (555, 'noname')")
+#c.execute("DELETE FROM users WHERE rowid = 1")
 c.execute("SELECT rowid, chat_id, name from users")
 items = c.fetchall()
 for el in items:
     print(el[0], el[1], el[2])
 c.execute("SELECT COUNT(chat_id) FROM users")
 items = c.fetchall()
-print(len(items))
+print(items[0][0])
+
 db.commit()
 db.close()

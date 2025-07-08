@@ -63,8 +63,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
 
     # If we're starting over we don't need to send a new message
     if context.user_data.get(START_OVER):
-        isnew = False
         user = update.callback_query.from_user
+        chat_id = update.callback_query.message.chat.id
+        isnew = add_user(chat_id, user.first_name)
         await update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
     else:
         await update.message.reply_text(
