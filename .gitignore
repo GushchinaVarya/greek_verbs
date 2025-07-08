@@ -1,3 +1,5 @@
 config.py
 .venv
 tmp_db
+log_trainig.log
+log_admin.log
