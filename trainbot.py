@@ -67,7 +67,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
         await update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
     else:
         await update.message.reply_text(
-            "Это бот для тренировки глаголов на греческом языке ОПИСАНИЕ ПРАВИЛ. Закончить тренироваться - /stop."
+"""Привет! Я бот, который поможет запомнить как меняются глаголы в греческом языке.
+
+Нажмите "Почитать правила" если хотите вспомнить как правильно спрягать глаголы в зависимости от рода и времени. Либо начинайте тренироваться! Я вам помогу! 
+
+Закончить тренироваться - /stop. """
         )
         user = update.message.from_user
         await update.message.reply_text(text=text, reply_markup=keyboard)
@@ -79,7 +83,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
 
 async def select_table(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     """Choose table."""
-    text = "Выберите таблицу."
+    text = "Выберите какие глаголы будем учить."
     buttons = [
         [
             InlineKeyboardButton(text="Настоящее время", callback_data=str(PRESENT)),
@@ -106,7 +110,15 @@ async def training_starting(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     
 Как тренироваться:
 
-ПРАВИЛА"""
+1\. Приготовьте ручку и бумагу
+2\. Я пришлю вам фразу на русском языке, вам нужно перевести ее на греческий
+3\. Если вы не знаете сам глагол, но хотите отработать правило спряжения, \- откройте подсказку
+4\. Проверьте себя, откройте ответ
+
+НЕ ПРИСЫЛАЙТЕ ответ сообщением\. Мне, боту, будет сложно вас проверить лучше чем это сделаете вы сами\.
+
+П\.С\. не забывайте про ударения\!
+"""
 
     buttons = [
         [
@@ -127,7 +139,7 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
     logger.info(
         f"User {update.callback_query.from_user.first_name} got question from table {context.user_data[TABLE]}")
     await update.callback_query.answer()
-    text = get_question(table)
+    text_q,text_h,text_a = get_question(table)
     buttons = [
         [
             InlineKeyboardButton(text="Еще", callback_data=str(GET_QUESTION)),
@@ -136,7 +148,9 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     chat_id = update.callback_query.from_user.id
-    await update.callback_query._bot.send_message(chat_id=chat_id, text=text, parse_mode='MarkdownV2', reply_markup=keyboard)
+    await update.callback_query._bot.send_message(chat_id=chat_id, text=text_q, parse_mode='MarkdownV2')
+    await update.callback_query._bot.send_message(chat_id=chat_id, text=text_h, parse_mode='MarkdownV2')
+    await update.callback_query._bot.send_message(chat_id=chat_id, text=text_a, parse_mode='MarkdownV2',reply_markup=keyboard)
 
     return TRAINING_STARTED
 
@@ -174,7 +188,7 @@ async def download_rule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """End Conversation by command."""
     logger.info(
-        f"User {update.callback_query.from_user.first_name} finished. ")
+        f"User {update.message.from_user.id} finished. ")
     await update.message.reply_text("Вы завершили тренировку. Чтобы начать сначала введите /start")
 
     return END

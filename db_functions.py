@@ -88,14 +88,19 @@ def get_question(table):
     b = np.array(items)
     b = b.reshape(b.shape[0])
     rowid_rand = np.random.choice(b)
-    c.execute(f"SELECT question, answer, comment from {tablename} WHERE rowid == '{rowid_rand}' ")
+    c.execute(f"SELECT question, answer, comment, hint from {tablename} WHERE rowid == '{rowid_rand}' ")
     items = c.fetchall()
     el = items[0]
-    text = f"""
-переведите на греческий *{el[0]}*
-||ОТВЕТ: {el[1]}||
-||КОММЕНТАРИЙ: {el[2]}||
+    text_q = f"""
+переведите на греческий 
+
+*{el[0]}*
+"""
+    text_h = f"""ПОДСКАЗКА: ||{el[3]}||
+        """
+    text_a = f"""ОТВЕТ: ||{el[1]}||
+КОММЕНТАРИЙ: ||{el[2]}||
     """
     db.commit()
     db.close()
-    return text
+    return text_q,text_h,text_a
