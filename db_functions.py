@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 import numpy as np
-from config import DB_NAME
+from config import DB_NAME, DB_USERS_NAME
 import datetime
 from telegram import InlineKeyboardButton
 
@@ -104,3 +104,18 @@ def get_question(table):
     db.commit()
     db.close()
     return text_q,text_h,text_a
+
+
+def add_user(chat_id, name):
+    db = sqlite3.connect(DB_USERS_NAME)
+    c = db.cursor()
+    c.execute(f"SELECT COUNT(chat_id) FROM users where chat_id = {chat_id}")
+    items = c.fetchall()
+    if len(items)==0:
+        is_new = True
+        c.execute(f"INSERT INTO users VALUES ({chat_id}, '{name}')")
+    else:
+        is_new = False
+    db.commit()
+    db.close()
+    return is_new

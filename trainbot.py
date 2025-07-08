@@ -1,5 +1,5 @@
 from config import TG_TOKEN_TRAIN
-from db_functions import get_question
+from db_functions import get_question, add_user
 
 import logging
 from typing import Any
@@ -51,7 +51,7 @@ END = ConversationHandler.END
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     """Select an action: Adding parent/child or show data."""
     text = (
-        "Выберите действие "
+        "Выберите действие."
     )
     buttons = [
         [
@@ -63,7 +63,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
 
     # If we're starting over we don't need to send a new message
     if context.user_data.get(START_OVER):
-        #await update.callback_query.answer()
+        isnew = False
         user = update.callback_query.from_user
         await update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
     else:
@@ -75,10 +75,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
 Закончить тренироваться - /stop. """
         )
         user = update.message.from_user
+        chat_id = update.message.chat.id
+        isnew = add_user(chat_id, user.first_name)
         await update.message.reply_text(text=text, reply_markup=keyboard)
 
     context.user_data[START_OVER] = False
-    logger.info("User %s started conversation.", user.first_name)
+    if isnew:
+        logger.info("NEW user %s with chat_id %s started conversation.", user.first_name, chat_id)
+    else:
+        logger.info("User %s started conversation.", user.first_name)
     return SELECTING_ACTION
 
 

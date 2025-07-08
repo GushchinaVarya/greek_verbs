@@ -3,3 +3,4 @@ config.py
 tmp_db
 log_trainig.log
 log_admin.log
+users_all.db

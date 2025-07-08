@@ -64,69 +64,8 @@ c = db.cursor()
 #WHERE
 #question = 'она читает' """)
 
-c.execute("""UPDATE past SET hint = 'используйте глагол αγοράζω'
-WHERE
-question = 'я купил' """)
 
-c.execute("""UPDATE past SET hint = 'используйте глагол διαβάζω'
-WHERE
-question = 'он прочитал' """)
 
-c.execute("""UPDATE past SET question = 'ты положил'
-WHERE
-answer = 'εσύ έβαλες' """)
-
-c.execute("""UPDATE past SET question = 'вы положили'
-WHERE
-answer = 'εσείς βάλατε' """)
-
-c.execute("""UPDATE past SET hint = 'используйте глагол αποφασίζω'
-WHERE
-question = 'мы решили' """)
-
-c.execute("""UPDATE past SET hint = 'используйте глагол βάζω' 
-WHERE 
-question = 'я положил' OR
-question = 'он положил' OR
-question = 'она положила' OR
-question = 'они положили' OR
-question = 'вы положили' OR
-question = 'ты положил' OR
-question = 'мы положили' OR
-question = 'оно положило' """)
-
-c.execute("""UPDATE past SET hint = 'используйте глагол βγάζω' 
-WHERE 
-question = 'я удалил/достал' OR
-question = 'он удалил/достал' OR
-question = 'она удалила/достала' OR
-question = 'они удалили/достали' OR
-question = 'вы удалили/достали' OR
-question = 'ты удалил/достал' OR
-question = 'мы удалили/достали' OR
-question = 'оно удалило/достало' """)
-
-c.execute("""UPDATE past SET hint = 'используйте глагол δίνω' 
-WHERE 
-question = 'я дал' OR
-question = 'он дал' OR
-question = 'она дала' OR
-question = 'они дали' OR
-question = 'вы дали' OR
-question = 'ты дал' OR
-question = 'мы дали' OR
-question = 'оно дало' """)
-
-c.execute("""UPDATE present SET hint = 'используйте глагол πίνω' 
-WHERE 
-question = 'я пью' OR
-question = 'он пьет' OR
-question = 'она пьет' OR
-question = 'они пьют' OR
-question = 'вы пьете' OR
-question = 'ты пьешь' OR
-question = 'мы пьем' OR
-question = 'оно пьет' """)
 
 c.execute(f"SELECT rowid from present ")
 items = c.fetchall()
@@ -144,8 +83,8 @@ c.execute("SELECT  ROW_NUMBER() OVER (ORDER BY rowid) rowid, question, answer, c
 #print (c.fetchmany(1))
 #print (c.fetchone())
 items = c.fetchall()
-for el in items:
-    print(el[0], el[1], '->', el[2], '   ', el[3])
+#for el in items:
+    #print(el[0], el[1], '->', el[2], '   ', el[3])
 
 
 #c.execute("SELECT rowid, question, answer, comment from present WHERE question == 'я слушаю' ")
@@ -154,8 +93,8 @@ c.execute("SELECT rowid, question, answer, comment from present")
 #print (c.fetchmany(1))
 #print (c.fetchone())
 items = c.fetchall()
-for el in items:
-    print(el[0], el[1], '->', el[2], '   ', el[3])
+#for el in items:
+#    print(el[0], el[1], '->', el[2], '   ', el[3])
 
 
 c.execute("SELECT COUNT(*) FROM future")
@@ -177,19 +116,37 @@ print(res)
 print(' ')
 print ('test form exel')
 df = pd.DataFrame({'question':[], 'answer':[], 'comment':[]})
-print(df)
+#print(df)
 c.execute("SELECT rowid, question, answer, comment from past ORDER BY rowid")
 items = c.fetchall()
 for el in items:
-    print(el[0], el[1], '->', el[2], '   ', el[3])
+    #print(el[0], el[1], '->', el[2], '   ', el[3])
     df = pd.concat([df, pd.DataFrame({'question':[el[1]], 'answer':[el[2]], 'comment':[el[3]]})])
-    print(df)
+    #print(df)
 
 df = df.reset_index(drop=True)
 print(df)
 print('_'.join(str(datetime.datetime.now()).split(' ')))
 db.commit()
 
+db.close()
 
 
+db = sqlite3.connect('users_all.db')
+
+c = db.cursor()
+#c.execute(""" CREATE TABLE users (
+#    chat_id BIGINT NOT NULL PRIMARY KEY,
+#    name TEXT
+#)""")
+
+#c.execute("INSERT INTO users VALUES (555, 'noname')")
+c.execute("SELECT rowid, chat_id, name from users")
+items = c.fetchall()
+for el in items:
+    print(el[0], el[1], el[2])
+c.execute("SELECT COUNT(chat_id) FROM users")
+items = c.fetchall()
+print(len(items))
+db.commit()
 db.close()
