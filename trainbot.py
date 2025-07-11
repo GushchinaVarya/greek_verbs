@@ -1,4 +1,4 @@
-from config import TG_TOKEN_TRAIN
+from config import TG_TOKEN_TRAIN, FUTURE_RULES_FILES, PAST_RULES_FILES, PRESENT_RULES_FILES, IMPERATIVE_RULES
 from db_functions import get_question, add_user
 
 import logging
@@ -167,16 +167,17 @@ async def download_rule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
     logger.info(f"User {update.callback_query.from_user.first_name} selected table {context.user_data[TABLE]}, and the mode is {context.user_data[MODE]}")
     ready_flag = 0
     if context.user_data[TABLE] == 'настоящее время':
-        filename = 'present_rules.pdf'
+        files = PRESENT_RULES_FILES
     if context.user_data[TABLE] == 'будущее время':
-        filename = 'present_rules.pdf'
+        files = FUTURE_RULES_FILES
     if context.user_data[TABLE] == 'прошедшее время':
-        filename = 'present_rules.pdf'
+        files = PAST_RULES_FILES
     if context.user_data[TABLE] == 'повелительное наклонение':
-        filename = 'present_rules.pdf'
-    text = f"Вот таблица {context.user_data[TABLE]} ⬆️"
+        files = IMPERATIVE_RULES
+    text = f"Вот правила {context.user_data[TABLE]} ⬆️"
     chat_id = update.callback_query.from_user.id
-    await update.callback_query._bot.send_document(chat_id = chat_id, document=filename)
+    for filename in files:
+        await update.callback_query._bot.send_document(chat_id = chat_id, document=filename)
     ready_flag = 1
     buttons = [
         [
