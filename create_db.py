@@ -47,7 +47,7 @@ c = db.cursor()
 #c.execute("INSERT INTO present VALUES ('она читает', 'αυτή διαβάζει', 'правильный глагол')")
 #c.execute("INSERT INTO present VALUES ('оно решает', 'αυτό αποφασίζει', 'правильный глагол')")
 
-#c.execute("DELETE FROM present WHERE rowid = 21")
+c.execute("DELETE FROM imperative WHERE rowid >= 48")
 
 #c.execute("""ALTER TABLE present
 #ADD hint TEXT DEFAULT 'используйте глагол αγοράζω' ;""")
@@ -67,66 +67,73 @@ c = db.cursor()
 
 
 
-c.execute(f"SELECT rowid from present ")
-items = c.fetchall()
-b = np.array(items)
-b = b.reshape(b.shape[0])
-rowid_rand = np.random.choice(b)
+#c.execute(f"SELECT rowid from present ")
+#items = c.fetchall()
+#b = np.array(items)
+#b = b.reshape(b.shape[0])
+#rowid_rand = np.random.choice(b)
 
 
 #c.execute("SELECT rowid, question, answer from future WHERE rowid <> 5 ORDER BY rowid DESC")
 #c.execute("SELECT rowid, question, answer, comment from present WHERE rowid == 15")
-c.execute("SELECT  ROW_NUMBER() OVER (ORDER BY rowid) rowid, question, answer, comment FROM present;")
+#c.execute("SELECT  ROW_NUMBER() OVER (ORDER BY rowid) rowid, question, answer, comment FROM present;")
 #c.execute("SELECT rowid, question, answer, comment from present WHERE question == 'я слушаю' ")
 #c.execute("SELECT * from future")
 #print (c.fetchall())
 #print (c.fetchmany(1))
 #print (c.fetchone())
-items = c.fetchall()
+#items = c.fetchall()
 #for el in items:
     #print(el[0], el[1], '->', el[2], '   ', el[3])
 
+qu = 'βάλε'
+#an = 'εμείς Θα αποφασίσουμε'
+print(qu.lower())
+c.execute("SELECT rowid, question, answer, comment, hint from imperative WHERE question = ?", (qu, ))
+items = c.fetchall()
+for el in items:
+    print(el[0], el[1], '->', el[2], el[3], el[4])
+
 
 #c.execute("SELECT rowid, question, answer, comment from present WHERE question == 'я слушаю' ")
-c.execute("SELECT rowid, question, answer, comment from present")
+#c.execute("SELECT rowid, question, answer, comment from present")
 #print (c.fetchall())
 #print (c.fetchmany(1))
 #print (c.fetchone())
-items = c.fetchall()
+#items = c.fetchall()
 #for el in items:
 #    print(el[0], el[1], '->', el[2], '   ', el[3])
 
 
-c.execute("SELECT COUNT(*) FROM future")
-(res,) = c.fetchone()
-print(res)
+#c.execute("SELECT COUNT(*) FROM future")
+#(res,) = c.fetchone()
+#print(res)
 
-qu = 'мы решим'
-an = 'εμείς Θα αποφασίσουμε'
-print(qu.lower(), an.lower())
-c.execute("SELECT rowid, question, answer from future WHERE question = ? AND answer = ?", (qu, an, ))
-items = c.fetchall()
-for el in items:
-    print(el[0], el[1], '->', el[2])
+#qu = 'не вытаскива'
+#an = 'εμείς Θα αποφασίσουμε'
+#print(qu.lower(), an.lower())
+#c.execute("SELECT rowid, question, answer from future WHERE question = ? AND answer = ?", (qu, an, ))
+#items = c.fetchall()
+#for el in items:
+#    print(el[0], el[1], '->', el[2])
 
-c.execute("SELECT COUNT(*) FROM future WHERE question = ? AND answer = ?", (qu, an, ))
-(res,) = c.fetchone()
-print(res)
+#c.execute("SELECT COUNT(*) FROM future WHERE question = ? AND answer = ?", (qu, an, ))
+#(res,) = c.fetchone()
+#print(res)
 
-print(' ')
-print ('test form exel')
-df = pd.DataFrame({'question':[], 'answer':[], 'comment':[]})
+#print(' ')
+#print ('test form exel')
+#df = pd.DataFrame({'question':[], 'answer':[], 'comment':[]})
 #print(df)
-c.execute("SELECT rowid, question, answer, comment from past ORDER BY rowid")
-items = c.fetchall()
-for el in items:
+#c.execute("SELECT rowid, question, answer, comment from past ORDER BY rowid")
+#items = c.fetchall()
+#for el in items:
     #print(el[0], el[1], '->', el[2], '   ', el[3])
-    df = pd.concat([df, pd.DataFrame({'question':[el[1]], 'answer':[el[2]], 'comment':[el[3]]})])
+    #df = pd.concat([df, pd.DataFrame({'question':[el[1]], 'answer':[el[2]], 'comment':[el[3]]})])
     #print(df)
 
-df = df.reset_index(drop=True)
-print(df)
-print('_'.join(str(datetime.datetime.now()).split(' ')))
+#print(df)
+#print('_'.join(str(datetime.datetime.now()).split(' ')))
 db.commit()
 
 db.close()
