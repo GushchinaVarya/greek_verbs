@@ -119,3 +119,14 @@ def add_user(chat_id, name):
     db.commit()
     db.close()
     return is_new
+
+def get_users():
+    db = sqlite3.connect(DB_USERS_NAME)
+    c = db.cursor()
+    c.execute(f"SELECT chat_id, name FROM users")
+    items = c.fetchall()
+    ids = [int(el[0]) for el in items]
+    names = [el[1] for el in items]
+    db.commit()
+    db.close()
+    return ids, names

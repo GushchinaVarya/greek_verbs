@@ -149,10 +149,12 @@ c = db.cursor()
 
 #c.execute("INSERT INTO users VALUES (555, 'noname')")
 #c.execute("DELETE FROM users WHERE rowid = 1")
-c.execute("SELECT rowid, chat_id, name from users")
+c.execute("SELECT chat_id, name from users")
 items = c.fetchall()
 for el in items:
-    print(el[0], el[1], el[2])
+    print(el[0], el[1])
+ids = [el[0] for el in items]
+print(ids)
 c.execute("SELECT COUNT(chat_id) FROM users")
 items = c.fetchall()
 print(items[0][0])
