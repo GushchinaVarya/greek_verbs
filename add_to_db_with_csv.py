@@ -31,7 +31,12 @@ print(sys.argv[0], sys.argv[1], sys.argv[2])
 df = pd.read_csv(sys.argv[2], index_col=0)
 print(df.head())
 for i in range(df.shape[0]):
-    c.execute(f"INSERT INTO {tablename} VALUES ('{df.iloc[i]['question']}', '{df.iloc[i]['answer']}', '{df.iloc[i]['comment']}', '{df.iloc[i]['hint']}')")
+    question = df.iloc[i]['question']
+    answer = df.iloc[i]['answer']
+    comment = df.iloc[i]['comment']
+    hint = df.iloc[i]['hint']
+    c.execute(f"DELETE FROM {tablename} WHERE question = ?", (question,))
+    c.execute(f"INSERT INTO {tablename} VALUES (?, ?, ?, ?)", (question, answer, comment, hint))
 
 
 db.commit()
