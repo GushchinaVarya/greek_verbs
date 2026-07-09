@@ -16,14 +16,36 @@ from telegram.ext import (
 
 from db_functions import generate_csv, check_if_db_has_this, write_to_table
 
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO, filename="log_admin.log"
-)
-# set higher logging level for httpx to avoid all GET and POST requests being logged
+LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(message)s"
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+_file_handler = logging.FileHandler("log_admin.log", encoding="utf-8")
+_file_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT))
+
+_console_handler = logging.StreamHandler()
+_console_handler.setFormatter(logging.Formatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT))
+
+logging.basicConfig(level=logging.INFO, handlers=[_file_handler, _console_handler])
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("telegram").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
+
+
+def _u(update: Update) -> str:
+    """Короткая строка с именем и chat_id пользователя для логов."""
+    if update.callback_query:
+        user = update.callback_query.from_user
+        chat_id = update.callback_query.message.chat.id
+    elif update.message:
+        user = update.message.from_user
+        chat_id = update.message.chat.id
+    else:
+        return "unknown"
+    name = user.first_name or ""
+    if user.last_name:
+        name += f" {user.last_name}"
+    return f"{name} (id={chat_id})"
 
 # State definitions for top level conversation
 #SELECTING_ACTION, SELECTING_TABLE, PRESENT, FUTURE, IMPERATIVE, PAST = map(chr, range(6))
@@ -74,7 +96,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
         await update.message.reply_text(text=text, reply_markup=keyboard)
 
     context.user_data[START_OVER] = False
-    logger.info("User %s started conversation.", user.first_name)
+    logger.info("[START] %s started admin session", _u(update))
     return SELECTING_ACTION
 
 
@@ -93,7 +115,7 @@ async def select_table(update: Update, context: ContextTypes.DEFAULT_TYPE) -> st
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     context.user_data[MODE] = update.callback_query.data
-    logger.info(f"User {update.callback_query.from_user.first_name} selected mode {context.user_data[MODE]}")
+    logger.info("[MENU] %s selected mode '%s'", _u(update), context.user_data[MODE])
     await update.callback_query.answer()
     await update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
 
@@ -102,7 +124,8 @@ async def select_table(update: Update, context: ContextTypes.DEFAULT_TYPE) -> st
 async def ask_for_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     """Prompt user to input data for selected feature."""
     context.user_data[TABLE] = update.callback_query.data
-    logger.info(f"User {update.callback_query.from_user.first_name} selected table {context.user_data[TABLE]}, and the mode is {context.user_data[MODE]}")
+    logger.info("[ADD] %s selected table '%s' (mode='%s')",
+                _u(update), context.user_data[TABLE], context.user_data.get(MODE, "?"))
     text = f"""Вы выбрали {context.user_data[TABLE]}\.
     
 Напишите строку для данной таблицы в формате
@@ -120,20 +143,37 @@ _Например:_
 async def download_table(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     """Prompt user to input data for selected feature."""
     context.user_data[TABLE] = update.callback_query.data
-    logger.info(f"User {update.callback_query.from_user.first_name} selected table {context.user_data[TABLE]}, and the mode is {context.user_data[MODE]}")
-    ready_flag = 0
-    filename, ready_flag = generate_csv(context.user_data[TABLE])
-    text = f"Вот таблица {context.user_data[TABLE]} ⬆️"
+    logger.info("[DOWNLOAD] %s requested CSV — table='%s'",
+                _u(update), context.user_data[TABLE])
     chat_id = update.callback_query.from_user.id
-    await update.callback_query._bot.send_document(chat_id = chat_id, document=filename)
+    ready_flag = 0
+    try:
+        filename, ready_flag = generate_csv(context.user_data[TABLE])
+        logger.info("[DOWNLOAD] CSV generated: '%s'", filename)
+    except Exception:
+        logger.exception("[DOWNLOAD] Failed to generate CSV — table='%s', %s",
+                         context.user_data[TABLE], _u(update))
+        await update.callback_query._bot.send_message(
+            chat_id=chat_id,
+            text="Не удалось сформировать CSV. Попробуйте ещё раз."
+        )
+        return END
+
+    try:
+        await update.callback_query._bot.send_document(chat_id=chat_id, document=filename)
+        logger.info("[DOWNLOAD] File sent to %s", _u(update))
+    except Exception:
+        logger.exception("[DOWNLOAD] Failed to send document to %s", _u(update))
+
+    text = f"Вот таблица {context.user_data[TABLE]} ⬆️"
     buttons = [
         [
             InlineKeyboardButton(text="Сделать что-нибудь еще", callback_data=str(AGAIN)),
         ],
     ]
     if ready_flag == 1:
-        await update.callback_query._bot.send_message(chat_id = chat_id, text=text,
-                                                  reply_markup=InlineKeyboardMarkup(buttons))
+        await update.callback_query._bot.send_message(chat_id=chat_id, text=text,
+                                                      reply_markup=InlineKeyboardMarkup(buttons))
     context.user_data[START_OVER] = True
     return END
 
@@ -169,13 +209,22 @@ _Вы ввели_:
 КОММЕНТАРИЙ: {user_data[COMMENT]}
 ПОДСКАЗКА: {user_data[HINT]}"""
 
-    text_to_add, delete_option, = check_if_db_has_this(context.user_data[TABLE], user_data[QUESTION])
-    if delete_option==0:
+    try:
+        text_to_add, delete_option = check_if_db_has_this(context.user_data[TABLE], user_data[QUESTION])
+    except Exception:
+        logger.exception("[INPUT] DB check failed — table='%s', question='%s', %s",
+                         context.user_data[TABLE], user_data[QUESTION], _u(update))
+        await update.message.reply_text("Ошибка при проверке базы данных. Попробуйте ввести заново.")
+        return TYPING
+
+    if delete_option == 0:
         keyboard = InlineKeyboardMarkup(buttons_add)
-    if delete_option==1:
+        logger.info("[INPUT] %s entered new record — table='%s', question='%s'",
+                    _u(update), context.user_data[TABLE], user_data[QUESTION])
+    else:
         keyboard = InlineKeyboardMarkup(buttons_add_and_del)
-    logger.info(
-        f"User {update.message.from_user.first_name} selected table {context.user_data[TABLE]} and wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]}, {user_data[HINT]}, delete option = {delete_option}")
+        logger.warning("[INPUT] %s entered duplicate — table='%s', question='%s' already exists",
+                       _u(update), context.user_data[TABLE], user_data[QUESTION])
     await update.message.reply_text(text=text_to_add+text, parse_mode='MarkdownV2', reply_markup=keyboard)
     return CONFIRM
 
@@ -191,18 +240,27 @@ async def write_to_db(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str
         ],
     ]
     keyboard = InlineKeyboardMarkup(buttons)
-    deleted = write_to_table(user_data[TABLE], user_data[QUESTION], user_data[ANSWER], user_data[COMMENT], user_data[HINT])
+    try:
+        deleted = write_to_table(user_data[TABLE], user_data[QUESTION], user_data[ANSWER],
+                                 user_data[COMMENT], user_data[HINT])
+    except Exception:
+        logger.exception("[WRITE] DB write failed — table='%s', question='%s', %s",
+                         user_data[TABLE], user_data[QUESTION], _u(update))
+        await update.callback_query.edit_message_text(text="Ошибка записи в базу данных. Попробуйте ещё раз.")
+        return SELECTING_TABLE
+
     if deleted:
-        logger.info(f"User {update.callback_query.from_user.first_name} wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]}, {user_data[HINT]} to table {context.user_data[TABLE]} DB , old item deleted")
+        logger.info("[WRITE] %s updated record (old deleted) — table='%s', question='%s'",
+                    _u(update), user_data[TABLE], user_data[QUESTION])
     else:
-        logger.info(f"User {update.callback_query.from_user.first_name} wrote {user_data[QUESTION]}, {user_data[ANSWER]}, {user_data[COMMENT]}, {user_data[HINT]} to table {context.user_data[TABLE]} DB")
+        logger.info("[WRITE] %s added new record — table='%s', question='%s'",
+                    _u(update), user_data[TABLE], user_data[QUESTION])
     await update.callback_query.edit_message_text(text="записано в базу", reply_markup=keyboard)
     return SELECTING_TABLE
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """End Conversation by command."""
-    logger.info(
-        f"User {update.callback_query.from_user.first_name} finished. ")
+    logger.info("[STOP] %s used /stop command", _u(update))
     await update.message.reply_text("Вы завершили ввод. Чтобы начать сначала введите /start")
     #await update.callback_query.edit_message_text(text="Ok")
     #context.user_data[START_OVER] = True
@@ -211,6 +269,8 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def finish_adding(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """End Conversation by command."""
+    logger.info("[FINISH] %s finished adding — table='%s'",
+                _u(update), context.user_data.get(TABLE, "?"))
     buttons = [
         [
             InlineKeyboardButton(text="Сделать что-нибудь еще", callback_data=str(AGAIN)),
