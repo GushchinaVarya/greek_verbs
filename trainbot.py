@@ -405,6 +405,8 @@ def main() -> None:
     )
 
     application.add_handler(conv_handler)
+    # Глобальный обработчик /announcement — работает в любом состоянии диалога
+    application.add_handler(CommandHandler("announcement", announcement))
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
